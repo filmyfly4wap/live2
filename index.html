@@ -1,145 +1,140 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Live Now - cricketlive.site</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Now - cricketlive.site</title>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.6.0/shaka-player.ui.min.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.6.0/controls.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.6.0/shaka-player.ui.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.6.0/controls.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <style>
-    * { margin:0; padding:0; box-sizing:border-box }
-    .player-wrap { overflow:hidden }
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+.shaka-video-container{position:relative;width:100%;aspect-ratio:16/9;background:#000}
+video{width:100%;height:100%}
 
-    .shaka-video-container {
-      position:relative;
-      width:100%;
-      aspect-ratio:16/9;
-      background:#000;
-      overflow:hidden;
-    }
+/* ⚙️ Settings Icon */
+.settings-btn{
+  position:absolute;
+  top:14px;
+  right:14px;
+  z-index:9999;
+  background:#000c;
+  color:#fff;
+  padding:10px;
+  border-radius:50%;
+  display:none;
+  cursor:pointer;
+}
 
-    video, iframe { width:100%; height:100%; border:0 }
-
-    .watermark-logo {
-      position:absolute;
-      top:55%;
-      left:2.5%;
-      z-index:9999;
-      pointer-events:none;
-    }
-
-    .watermark-logo img { width:48px }
-
-    .shaka-seek-bar {
-      background:#C3C3C3 !important;
-      border-radius:10px;
-    }
-
-    .shaka-seek-bar-container input[type="range"]::-webkit-slider-thumb {
-      background:#2962ff !important;
-    }
-  </style>
+/* Language Menu */
+.lang-menu{
+  position:absolute;
+  top:56px;
+  right:14px;
+  background:#111;
+  border-radius:8px;
+  overflow:hidden;
+  display:none;
+  z-index:9999;
+}
+.lang-menu div{
+  padding:10px 16px;
+  color:#fff;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.lang-menu div:hover{background:#2962ff}
+</style>
 </head>
 
 <body>
 
-<div class="player-wrap">
-  <div class="shaka-video-container" id="playerBox">
+<div class="shaka-video-container" id="playerBox">
 
-    <div class="watermark-logo">
-      <img src="https://i.postimg.cc/MTTS4nsH/createlive.png">
-    </div>
-
-    <video autoplay playsinline></video>
+  <!-- ⚙️ SETTINGS -->
+  <div class="settings-btn" id="settingsBtn">
+    <i class="fa-solid fa-gear"></i>
   </div>
+
+  <!-- 🌐 LANGUAGE MENU -->
+  <div class="lang-menu" id="langMenu">
+    <div onclick="setLang('hi')">Hindi</div>
+    <div onclick="setLang('en')">English</div>
+    <div onclick="setLang('ta')">Tamil</div>
+    <div onclick="setLang('te')">Telugu</div>
+  </div>
+
+  <video autoplay playsinline></video>
 </div>
 
 <script>
 const q = new URLSearchParams(location.search);
-const streamUrl = q.get("url");
-const keyId = q.get("keyId");
-const key = q.get("key");
+const lang = q.get("lang") || "hi";
 
-document.addEventListener("DOMContentLoaded", async () => {
+/* 🔗 LANGUAGE → STREAM URL */
+const STREAMS = {
+  hi:{url:"https://example.com/hindi.mpd",keyId:"KEYID1",key:"KEY1"},
+  en:{url:"https://example.com/english.mpd",keyId:"KEYID2",key:"KEY2"},
+  ta:{url:"https://example.com/tamil.mpd",keyId:"KEYID3",key:"KEY3"},
+  te:{url:"https://example.com/telugu.mpd",keyId:"KEYID4",key:"KEY4"}
+};
 
-  if (!streamUrl) {
-    alert("Stream URL missing");
-    return;
-  }
+const stream = STREAMS[lang];
 
-  const box = document.getElementById("playerBox");
-  const video = box.querySelector("video");
+const box = document.getElementById("playerBox");
+const video = box.querySelector("video");
+const settingsBtn = document.getElementById("settingsBtn");
+const langMenu = document.getElementById("langMenu");
 
-  video.muted = true;
+video.muted = true;
 
-  // CASE 1: HTML PLAYER
-  if (streamUrl.includes(".html") || streamUrl.includes("player")) {
-    box.innerHTML = `<iframe src="${streamUrl}" allowfullscreen allow="autoplay"></iframe>`;
-    return;
-  }
+/* Show ⚙️ on interaction */
+let hideTimer;
+function showControls(){
+  settingsBtn.style.display="block";
+  clearTimeout(hideTimer);
+  hideTimer = setTimeout(()=>{
+    if(langMenu.style.display!=="block")
+      settingsBtn.style.display="none";
+  },3000);
+}
 
-  // CASE 2: DIRECT STREAM
-  if (!keyId && !key) {
-    video.src = streamUrl;
-    await video.play().catch(()=>{});
-  }
+box.addEventListener("mousemove",showControls);
+box.addEventListener("touchstart",showControls);
+settingsBtn.onclick = ()=> {
+  langMenu.style.display = langMenu.style.display==="block"?"none":"block";
+};
 
-  // CASE 3: DRM MPD
-  if (keyId && key) {
-    shaka.polyfill.installAll();
-    if (!shaka.Player.isBrowserSupported()) return;
+/* Load Player */
+shaka.polyfill.installAll();
+const player = new shaka.Player(video);
+new shaka.ui.Overlay(player, box, video);
 
-    const player = new shaka.Player(video);
-
-    const ui = new shaka.ui.Overlay(player, box, video);
-
-    // ✅ LANGUAGE SELECTOR ENABLE
-    ui.configure({
-      controlPanelElements: [
-        'play_pause',
-        'time_and_duration',
-        'spacer',
-        'mute',
-        'volume',
-        'language',
-        'captions',
-        'fullscreen'
-      ]
-    });
-
-    player.configure({
-      preferredAudioLanguage: 'hi',
-      preferredTextLanguage: 'hi',
-      drm: {
-        clearKeys: { [keyId]: key }
-      }
-    });
-
-    player.getNetworkingEngine().registerRequestFilter((t, r) => {
-      r.headers["Referer"] = "https://www.jiotv.com/";
-      r.headers["User-Agent"] = "ExoPlayer";
-    });
-
-    await player.load(streamUrl);
-    await video.play().catch(()=>{});
-  }
-
-  // 🔊 First tap = sound ON
-  const enableSound = () => {
-    video.muted = false;
-    video.volume = 1;
-    document.removeEventListener("click", enableSound);
-    document.removeEventListener("touchstart", enableSound);
-  };
-
-  document.addEventListener("click", enableSound, { once:true });
-  document.addEventListener("touchstart", enableSound, { once:true });
-
+player.configure({
+  drm:{clearKeys:{[stream.keyId]:stream.key}}
 });
+
+player.getNetworkingEngine().registerRequestFilter((t,r)=>{
+  r.headers["Referer"]="https://www.jiotv.com/";
+  r.headers["User-Agent"]="ExoPlayer";
+});
+
+player.load(stream.url).then(()=>{
+  video.play().catch(()=>{});
+});
+
+/* First tap sound ON */
+document.addEventListener("click",()=>{
+  video.muted=false;
+  video.volume=1;
+},{once:true});
+
+/* Language change */
+function setLang(l){
+  location.search="?lang="+l;
+}
 </script>
 
 </body>
