@@ -21,19 +21,6 @@
       box-sizing: border-box
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
     @keyframes pulseRed {
       0% {
         transform: scale(.95);
@@ -52,7 +39,7 @@
     }
 
     .player-wrap {
-      
+
       overflow: hidden
     }
 
@@ -109,52 +96,43 @@
       .watermark-logo {
         padding: 5px 8px;
       }
-      
+
       .watermark-logo img {
         width: 45px
+      }
     }
-    }
-
-
-
-
-
-
-
-
+    
+    
   </style>
-</head>
-
-<body>
-
-
-
-
-
-
- 
-
-
-        
-
-
-    <div class="player-wrap">
-      <div class="shaka-video-container" id="playerBox">
-
-        <div class="watermark-logo" id="wm">
-          <img src="https://i.postimg.cc/MTTS4nsH/createlive.png">
-        </div>
-
-        <video autoplay playsinline></video>
-      </div>
-    </div>
-
-
   
+    <style>
 
 
+  .shaka-seek-bar {
+    background-color: #C3C3C3 !important;
+    border-radius: 10px;
+  }
+  
+  .shaka-seek-bar-container input[type="range"]::-webkit-slider-thumb {
+  background-color: #2962ff !important; 
+}
+
+</style>
+
+</head>
+<body>
+  <div class="player-wrap">
+    <div class="shaka-video-container" id="playerBox">
+
+      <div class="watermark-logo" id="wm">
+        <img src="https://i.postimg.cc/MTTS4nsH/createlive.png">
+      </div>
+
+      <video autoplay playsinline></video>
+    </div>
+  </div>
   </main>
-
+  
   <script>
     const q = new URLSearchParams(location.search);
     const streamUrl = q.get("url");
