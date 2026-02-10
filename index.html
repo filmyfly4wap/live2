@@ -6,132 +6,200 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Live Now - cricketlive.site</title>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.6.0/shaka-player.ui.min.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.6.0/controls.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.6.0/shaka-player.ui.min.js">
+  </script>
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.6.0/controls.min.css">
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <style>
-    * { margin:0; padding:0; box-sizing:border-box }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box
+    }
 
-    .player-wrap { overflow:hidden }
+    @keyframes pulseRed {
+      0% {
+        transform: scale(.95);
+        opacity: .7
+      }
+
+      50% {
+        transform: scale(1.1);
+        opacity: 1
+      }
+
+      100% {
+        transform: scale(.95);
+        opacity: .7
+      }
+    }
+
+    .player-wrap {
+
+      overflow: hidden
+    }
 
     .shaka-video-container {
-      position:relative;
-      width:100%;
-      aspect-ratio:16/9;
-      background:#000;
-      overflow:hidden;
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: #000;
+      overflow: hidden;
     }
 
-    video, iframe { width:100%; height:100%; border:0 }
+    video,
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: 0
+    }
 
     .watermark-logo {
-      position:absolute;
-      top:55%;
-      left:2.5%;
-      z-index:9999;
-      display:flex;
-      align-items:center;
-      gap:6px;
-      font-size:13px;
-      font-weight:800;
-      color:#fff;
-      padding:6px 10px;
-      pointer-events:none;
+      position: absolute;
+      top: 55%;
+      left: 2.5%;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 10px;
+      pointer-events: none;
+      user-select: none;
     }
 
-    .watermark-logo img { width:48px }
 
-    .shaka-seek-bar {
-      background-color:#C3C3C3 !important;
-      border-radius:10px;
+    .watermark-logo img {
+      width: 48px
     }
 
-    .shaka-seek-bar-container input[type="range"]::-webkit-slider-thumb {
-      background-color:#2962ff !important;
+    :fullscreen .watermark-logo,
+    :-webkit-full-screen .watermark-logo {
+      top: 64%;
+      left: 10%;
     }
-  </style>
-</head>
 
-<body>
+    .fullscreen-wm {
+      top: 48px !important;
+      right: 48px !important
+    }
 
-<div class="player-wrap">
-  <div class="shaka-video-container" id="playerBox">
-
-    <div class="watermark-logo" id="wm">
-      <img src="https://i.postimg.cc/MTTS4nsH/createlive.png">
-    </div>
-
-    <video autoplay playsinline></video>
-  </div>
-</div>
-
-<script>
-const q = new URLSearchParams(location.search);
-const streamUrl = q.get("url");
-const keyId = q.get("keyId");
-const key = q.get("key");
-
-document.addEventListener("DOMContentLoaded", async () => {
-
-  if (!streamUrl) {
-    alert("Stream URL missing");
-    return;
-  }
-
-  const box = document.getElementById("playerBox");
-  const video = box.querySelector("video");
-
-  // Mobile autoplay policy safe start
-  video.muted = true;
-
-  // CASE 1: HTML PLAYER
-  if (streamUrl.includes(".html") || streamUrl.includes("player")) {
-    box.innerHTML = `<iframe src="${streamUrl}" allowfullscreen allow="autoplay"></iframe>`;
-    return;
-  }
-
-  // CASE 2: DIRECT STREAM
-  if (!keyId && !key) {
-    video.src = streamUrl;
-    await video.play().catch(()=>{});
-  }
-
-  // CASE 3: DRM MPD
-  if (keyId && key) {
-    shaka.polyfill.installAll();
-    if (!shaka.Player.isBrowserSupported()) return;
-
-    const player = new shaka.Player(video);
-    new shaka.ui.Overlay(player, box, video);
-
-    player.configure({
-      drm: {
-        clearKeys: { [keyId]: key }
+    @media(max-width:768px) {
+      .watermark-logo {
+        padding: 5px 8px;
       }
-    });
 
-    player.getNetworkingEngine().registerRequestFilter((t, r) => {
-      r.headers["Referer"] = "https://www.jiotv.com/";
-      r.headers["User-Agent"] = "ExoPlayer";
-    });
+      .watermark-logo img {
+        width: 45px
+      }
+    }
+    
+    
+  </style>
+  
+    <style>
 
-    await player.load(streamUrl);
-    await video.play().catch(()=>{});
+
+  .shaka-seek-bar {
+    background-color: #C3C3C3 !important;
+    border-radius: 10px;
   }
+  
+  .shaka-seek-bar-container input[type="range"]::-webkit-slider-thumb {
+  background-color: #2962ff !important; 
+}
 
-  // 🔊 FIRST USER TAP = SOUND ON (NO UI CHANGE)
-  const enableSound = () => {
-    video.muted = false;
-    video.volume = 1;
-    document.removeEventListener("click", enableSound);
-    document.removeEventListener("touchstart", enableSound);
-  };
+</style>
 
-  document.addEventListener("click", enableSound, { once:true });
-  document.addEventListener("touchstart", enableSound, { once:true });
-});
-</script>
+</head>
+<body>
+  <div class="player-wrap">
+    <div class="shaka-video-container" id="playerBox">
+
+      <div class="watermark-logo" id="wm">
+        <img src="https://i.postimg.cc/MTTS4nsH/createlive.png">
+      </div>
+
+      <video autoplay playsinline></video>
+    </div>
+  </div>
+  </main>
+  
+  <script>
+    const q = new URLSearchParams(location.search);
+    const streamUrl = q.get("url");
+    const keyId = q.get("keyId");
+    const key = q.get("key");
+
+    document.addEventListener("DOMContentLoaded", async () => {
+
+      if (!streamUrl) {
+        alert("Stream URL missing");
+        return;
+      }
+
+      const box = document.getElementById("playerBox");
+      const video = box.querySelector("video");
+
+      /*  CASE 1: HTML PLAYER / NESTED PLAYER */
+      if (streamUrl.includes(".html") || streamUrl.includes("player")) {
+        box.innerHTML =
+          `<iframe src="${streamUrl}" allowfullscreen allow="autoplay"></iframe>`;
+        return;
+      }
+
+      /*  CASE 2: DIRECT (MP4 / M3U8) */
+      if (!keyId && !key) {
+        video.src = streamUrl;
+        video.muted = true;
+        video.play();
+        return;
+      }
+
+      /*  CASE 3: DRM MPD */
+      shaka.polyfill.installAll();
+      if (!shaka.Player.isBrowserSupported()) return;
+
+      const player = new shaka.Player(video);
+      new shaka.ui.Overlay(player, box, video);
+
+      player.configure({
+        drm: {
+          clearKeys: {
+            [keyId]: key
+          }
+        }
+      });
+
+      player.getNetworkingEngine().registerRequestFilter((t, r) => {
+        r.headers["Referer"] = "https://www.jiotv.com/";
+        r.headers["User-Agent"] = "ExoPlayer";
+      });
+
+      await player.load(streamUrl);
+      video.muted = true;
+      video.play();
+    });
+
+
+    const wm = document.getElementById("wm");
+
+    function keepInsideVideo() {
+      wm.style.maxWidth = "40%";
+    }
+
+    document.addEventListener("fullscreenchange", keepInsideVideo);
+    document.addEventListener("webkitfullscreenchange", keepInsideVideo);
+  </script>
 
 </body>
+
 </html>
